@@ -1,8 +1,8 @@
 const { ipcRenderer } = require('electron');
 
 const __onload__ = () => {
-  const loginButton = document.querySelector('#login');
-  const logoutButton = document.querySelector('button#logout');
+  const loginButton = document.querySelector('ion-button#login');
+  const logoutButton = document.querySelector('ion-button#logout');
 
   const updateUI = (isLoggedIn) => {
     if (isLoggedIn) {

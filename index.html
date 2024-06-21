@@ -2,23 +2,30 @@
 <html>
 <head>
     <title>Electron OAuth Example</title>
+    <!-- Include Ionic CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
     <link rel="stylesheet" type="text/css" href="index.css">
 </head>
 <body>
-    <h1>Electron OAuth Example</h1>
-    <div class="g-sign-in-button" id="login">
-        <div class="content-wrapper">
-            <div class="logo-wrapper">
-                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo">
+    <ion-app>
+        <ion-content>
+            <h1>Electron OAuth Example</h1>
+            <div id="google-signin">
+                <ion-button id="login" class="google-button">
+                    <div class="google-icon-container">
+                        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" class="google-icon">
+                    </div>
+                    <span class="button-text">Sign in with Google</span>
+                </ion-button>
             </div>
-            <span class="text-container">
-                <span>Sign in with Google</span>
-            </span>
-        </div>
-    </div>
-    <button id="logout" style="display: none;">Logout</button>
-    <div id="status"></div>
-    <div id="token-status"></div>
+            <ion-button id="logout" style="display: none;">Logout</ion-button>
+            <div id="status"></div>
+            <div id="token-status"></div>
+        </ion-content>
+    </ion-app>
+    <!-- Include Ionic JS -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
     <script src="index.js"></script>
 </body>
 </html>
