@@ -4,11 +4,66 @@ body {
   padding: 50px;
 }
 
-button {
+button, .g-sign-in-button {
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+#logout {
   padding: 10px 20px;
   font-size: 16px;
 }
 
 #status, #token-status {
   margin-top: 20px;
+}
+
+.g-sign-in-button {
+  display: inline-block;
+  background: white;
+  color: #444;
+  border-radius: 5px;
+  border: thin solid #888;
+  box-shadow: 1px 1px 1px grey;
+  white-space: nowrap;
+  padding: 0; /* Remove padding from the button itself */
+  cursor: pointer; /* Change cursor to pointer */
+  transition: box-shadow 0.3s ease, border-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+.g-sign-in-button .content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px; /* Add padding to the content wrapper instead */
+}
+
+.g-sign-in-button img {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px; /* Space between logo and text */
+}
+
+.g-sign-in-button .logo-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.g-sign-in-button .text-container {
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  align-items: center;
+}
+
+/* Hover effect */
+.g-sign-in-button:hover {
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Raised effect */
+  border-color: #666; /* Slightly darker border on hover */
+}
+
+button:hover {
+  cursor: pointer; /* Change cursor to pointer for standard buttons */
 }

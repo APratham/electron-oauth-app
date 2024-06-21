@@ -20,7 +20,7 @@ The primary purpose of this application is to serve as a reference implementatio
 ### Installation
 1. Clone the repository:
     ```bash
-    git clone https://github.com/your-username/electron-oauth-app.git
+    git clone https://github.com/APratham/electron-oauth-app.git
     cd electron-oauth-app
     ```
 2. Install dependencies:

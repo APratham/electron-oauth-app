@@ -6,7 +6,16 @@
 </head>
 <body>
     <h1>Electron OAuth Example</h1>
-    <button id="login">Login with Google</button>
+    <div class="g-sign-in-button" id="login">
+        <div class="content-wrapper">
+            <div class="logo-wrapper">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo">
+            </div>
+            <span class="text-container">
+                <span>Sign in with Google</span>
+            </span>
+        </div>
+    </div>
     <button id="logout" style="display: none;">Logout</button>
     <div id="status"></div>
     <div id="token-status"></div>

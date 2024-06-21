@@ -1,5 +1,5 @@
 {
-  "name": "google-oauth-app",
+  "name": "electron-oauth-app",
   "version": "1.0.0",
   "description": "Electron Desktop App with Google OAuth",
   "main": "main.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/otiai10/electron-playground.git"
+    "url": "git+https://github.com/APratham/electron-oauth-app.git"
   },
   "keywords": [
     "Electron",
@@ -16,12 +16,12 @@
     "Google",
     "Desktop"
   ],
-  "author": "otiai10",
-  "license": "MIT",
+  "author": "APratham",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/otiai10/electron-playground/issues"
+    "url": "https://github.com/APratham/electron-oauth-app/issues"
   },
-  "homepage": "https://github.com/otiai10/electron-playground#readme",
+  "homepage": "https://github.com/APratham/electron-oauth-app?tab=readme-ov-file",
   "dependencies": {
     "electron": "^30.1.1",
     "electron-store": "^10.0.0",
