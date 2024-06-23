@@ -35,20 +35,23 @@ The primary purpose of this application is to serve as a reference implementatio
 
 ### Google OAuth Setup
 1. Create a new project on the [Google Cloud Console](https://console.cloud.google.com/).
-2. Set up OAuth 2.0 credentials and obtain the client ID and client secret.
-3. Add the client ID and client secret to `secrets.example.js` file and then rename it to `secrets.js`
+2. Create an OAuth consent screen by adding name, email ID and developer contact information. **Do not** add a logo because it will ask for app verification.
+3. No need to add any scopes to your application. You can add test users if needed.
+4. Google allows adding upto 100 test users before verification will be needed.
+5. Create a client ID for application type as desktop app and name it whatever you want.
+6. Obtain the client ID and client secret and add them to `secrets.example.js` file. Rename the file to `secrets.js`.
 
 ### Microsoft OAuth Setup
-1. Create a new project on [Azure Portal](aka.ms/portal).
+1. Create a new project on [Azure Portal](https://portal.azure.com/#home).
 2. Go through the steps to create an App Registration for a Desktop app.
 3. Mention `myapp://auth` in the redirect URI.
 4. Once the App Registration is created, you have to edit the Manifest. Microsoft doesn't have a way to allow Implicit grants through the UI, so we need to use the Manifest. Look for `auth2AllowIdTokenImplicitFlow` and `oauth2AllowImplicitFlow` and make those values `true`. Now when you go to Authentication you can see that "Access tokens" and "ID tokens" are checked.
 4. You have to go to API permissions and assign the following permissions through Microsoft Graph delegated permissions:
-    - email
-    - offline_access
-    - openid
-    - profile
-    - User.Read
+    - `email`
+    - `offline_access`
+    - `openid`
+    - `profile`
+    - `User.Read`
 5. Add the client ID, tenant ID, and the redirect URI to `secrets.example.js` file and then rename it to `secrets.js`
 
 
