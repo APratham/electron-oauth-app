@@ -1,33 +1,7 @@
 const { ipcRenderer } = require('electron');
 
 const __onload__ = () => {
-    const googleLoginButton = document.querySelector('ion-button.google-button');
-    const microsoftLoginButton = document.querySelector('ion-button.microsoft-button');
     const logoutButton = document.querySelector('ion-button#logout');
-
-    const updateUI = (isLoggedIn) => {
-        if (isLoggedIn) {
-            googleLoginButton.style.display = 'none';
-            microsoftLoginButton.style.display = 'none';
-            logoutButton.style.display = 'inline-block';
-        } else {
-            googleLoginButton.style.display = 'inline-block';
-            googleLoginButton.removeAttribute('disabled');
-            microsoftLoginButton.style.display = 'inline-block';
-            microsoftLoginButton.removeAttribute('disabled');
-            logoutButton.style.display = 'none';
-        }
-    };
-
-    googleLoginButton.addEventListener('click', () => {
-        googleLoginButton.setAttribute('disabled', true);
-        ipcRenderer.send('auth-start', 'google');
-    });
-
-    microsoftLoginButton.addEventListener('click', () => {
-        microsoftLoginButton.setAttribute('disabled', true);
-        ipcRenderer.send('auth-start', 'microsoft');
-    });
 
     logoutButton.addEventListener('click', () => {
         ipcRenderer.send('logout');
@@ -37,7 +11,6 @@ const __onload__ = () => {
         const { uniqueId } = data;
         document.getElementById('status').innerText = `Login successful! Your unique ID: ${uniqueId}`;
         ipcRenderer.send('validate-token', data.tokens);
-        updateUI(true);
     });
 
     ipcRenderer.on('token-validity', (event, isValid) => {
@@ -45,15 +18,8 @@ const __onload__ = () => {
         document.getElementById('token-status').innerText = statusText;
     });
 
-    ipcRenderer.on('auth-window-closed', () => {
-        googleLoginButton.removeAttribute('disabled');
-        microsoftLoginButton.removeAttribute('disabled');
-    });
-
     ipcRenderer.on('logout-success', () => {
-        document.getElementById('status').innerText = 'Logged out successfully!';
-        document.getElementById('token-status').innerText = '';
-        updateUI(false);
+        window.location.href = 'login.html';
     });
 
     // Check if already logged in
@@ -61,3 +27,10 @@ const __onload__ = () => {
 };
 
 window.onload = __onload__;
+
+// Check if the URL contains query parameters with login data
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('uniqueId')) {
+    const uniqueId = urlParams.get('uniqueId');
+    document.getElementById('status').innerText = `Login successful! Your unique ID: ${uniqueId}`;
+}

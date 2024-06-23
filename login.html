@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+    <link rel="stylesheet" type="text/css" href="global.css">
+    <link rel="stylesheet" type="text/css" href="login.css">
+</head>
+<body>
+    <ion-app>
+        <ion-content>
+            <h1>Login</h1>
+            <div id="google-signin">
+                <ion-button id="google-login" class="google-button">
+                    <div class="google-icon-container">
+                        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" class="google-icon">
+                    </div>
+                    <span class="button-text">Sign in with Google</span>
+                </ion-button>
+            </div>
+            <div id="microsoft-signin">
+                <ion-button id="microsoft-login" class="microsoft-button">
+                    <div class="microsoft-icon-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft" class="microsoft-icon">
+                    </div>
+                    <span class="button-text">Sign in with Microsoft</span>
+                </ion-button>
+            </div>
+        </ion-content>
+    </ion-app>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>

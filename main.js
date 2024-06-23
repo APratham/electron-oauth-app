@@ -27,7 +27,6 @@ require('electron-reload')(__dirname, {
 app.on('ready', async () => {
     protocol.registerHttpProtocol('msal', (request, callback) => {
         const requestUrl = new URL(request.url);
-        console.log('Protocol Request URL:', requestUrl.toString());
         if (requestUrl.searchParams.has('code')) {
             handleMicrosoftAuthCode(requestUrl.searchParams.get('code'));
         }
@@ -45,7 +44,7 @@ app.on('ready', async () => {
             contextIsolation: false  // Ensure this is set to false
         },
     });
-    mainWindow.loadURL(`file://${__dirname}/index.html`);
+
     mainWindow.webContents.openDevTools();
 
     try {
@@ -54,27 +53,31 @@ app.on('ready', async () => {
         const msTokens = await keytar.getPassword(SERVICE_NAME, MS_ACCOUNT_NAME);
         const msUniqueId = await keytar.getPassword(SERVICE_NAME, MS_UNIQUE_ID_KEY);
 
-        if (googleTokens) {
-            const tokens = JSON.parse(googleTokens);
+        if (googleTokens || msTokens) {
+            mainWindow.loadURL(`file://${__dirname}/index.html`);
             mainWindow.webContents.once('did-finish-load', () => {
-                mainWindow.webContents.send('auth-success', { tokens, uniqueId: googleUniqueId });
-                validateGoogleToken(tokens).then(isValid => {
-                    mainWindow.webContents.send('token-validity', isValid);
-                });
+                if (googleTokens) {
+                    const tokens = JSON.parse(googleTokens);
+                    mainWindow.webContents.send('auth-success', { tokens, uniqueId: googleUniqueId });
+                    validateGoogleToken(tokens).then(isValid => {
+                        mainWindow.webContents.send('token-validity', isValid);
+                    });
+                } else if (msTokens) {
+                    const { tokens, account } = JSON.parse(msTokens);
+                    mainWindow.webContents.send('auth-success', { tokens, uniqueId: msUniqueId });
+                    validateMsToken(tokens.accessToken).then(isValid => {
+                        mainWindow.webContents.send('token-validity', isValid);
+                    }).catch(error => {
+                        console.error('Token validation error:', error);
+                    });
+                }
             });
-        } else if (msTokens) {
-            const { tokens, account } = JSON.parse(msTokens);
-            mainWindow.webContents.once('did-finish-load', () => {
-                mainWindow.webContents.send('auth-success', { tokens, uniqueId: msUniqueId });
-                validateMsToken(tokens.accessToken).then(isValid => {
-                    mainWindow.webContents.send('token-validity', isValid);
-                }).catch(error => {
-                    console.error('Token validation error:', error);
-                });
-            });
+        } else {
+            mainWindow.loadURL(`file://${__dirname}/login.html`);
         }
     } catch (error) {
         console.error('Error retrieving tokens:', error);
+        mainWindow.loadURL(`file://${__dirname}/login.html`);
     }
 
     ipcMain.on('auth-start', async (event, provider) => {
