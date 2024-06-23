@@ -1,15 +1,44 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol } = require('electron');
 const { OAuth2Client } = require('google-auth-library');
-const { OAUTH_CLIENT } = require('./secrets');
+const { GOOGLE_OAUTH_CLIENT, MICROSOFT_OAUTH_CLIENT } = require('./secrets');
+const msal = require('@azure/msal-node');
 const crypto = require('crypto');
 const keytar = require('keytar');
+const fetch = require('node-fetch'); // Ensure node-fetch is installed
+const URL = require('url').URL;
+const path = require('path');
 
 const SERVICE_NAME = 'ElectronOAuthExample';
-const ACCOUNT_NAME = 'oauth-token';
-const UNIQUE_ID_KEY = 'unique-id';
+const GOOGLE_ACCOUNT_NAME = 'google-oauth-token';
+const GOOGLE_UNIQUE_ID_KEY = 'google-unique-id';
+const MS_ACCOUNT_NAME = 'ms-oauth-token';
+const MS_UNIQUE_ID_KEY = 'ms-unique-id';
+
+let mainWindow;
+let authWindow;
+
+require('electron-reload')(__dirname, {
+    electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
+    hardResetMethod: 'exit',
+    watchRenderer: true,
+    ignored: /node_modules|[/\\]\./
+  });
 
 app.on('ready', async () => {
-    const mainWindow = new BrowserWindow({
+    protocol.registerHttpProtocol('msal', (request, callback) => {
+        const requestUrl = new URL(request.url);
+        console.log('Protocol Request URL:', requestUrl.toString());
+        if (requestUrl.searchParams.has('code')) {
+            handleMicrosoftAuthCode(requestUrl.searchParams.get('code'));
+        }
+        callback({ cancel: true });
+    }, (error) => {
+        if (error) {
+            console.error('Failed to register protocol', error);
+        }
+    });
+
+    mainWindow = new BrowserWindow({
         title: 'Electron OAuth Example',
         webPreferences: { 
             nodeIntegration: true,
@@ -19,53 +48,148 @@ app.on('ready', async () => {
     mainWindow.loadURL(`file://${__dirname}/index.html`);
     mainWindow.webContents.openDevTools();
 
-    const storedTokens = await keytar.getPassword(SERVICE_NAME, ACCOUNT_NAME);
-    const uniqueId = await keytar.getPassword(SERVICE_NAME, UNIQUE_ID_KEY);
-    if (storedTokens) {
-        const tokens = JSON.parse(storedTokens);
-        mainWindow.webContents.once('did-finish-load', () => {
-            mainWindow.webContents.send('auth-success', { tokens, uniqueId });
-            validateToken(tokens).then(isValid => {
-                mainWindow.webContents.send('token-validity', isValid);
+    try {
+        const googleTokens = await keytar.getPassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME);
+        const googleUniqueId = await keytar.getPassword(SERVICE_NAME, GOOGLE_UNIQUE_ID_KEY);
+        const msTokens = await keytar.getPassword(SERVICE_NAME, MS_ACCOUNT_NAME);
+        const msUniqueId = await keytar.getPassword(SERVICE_NAME, MS_UNIQUE_ID_KEY);
+
+        if (googleTokens) {
+            const tokens = JSON.parse(googleTokens);
+            mainWindow.webContents.once('did-finish-load', () => {
+                mainWindow.webContents.send('auth-success', { tokens, uniqueId: googleUniqueId });
+                validateGoogleToken(tokens).then(isValid => {
+                    mainWindow.webContents.send('token-validity', isValid);
+                });
             });
-        });
+        } else if (msTokens) {
+            const { tokens, account } = JSON.parse(msTokens);
+            mainWindow.webContents.once('did-finish-load', () => {
+                mainWindow.webContents.send('auth-success', { tokens, uniqueId: msUniqueId });
+                validateMsToken(tokens.accessToken).then(isValid => {
+                    mainWindow.webContents.send('token-validity', isValid);
+                }).catch(error => {
+                    console.error('Token validation error:', error);
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error retrieving tokens:', error);
     }
 
-    ipcMain.on('auth-start', async () => {
-        const client = initOAuthClient();
-        const url = client.generateAuthUrl({
-            scope: ['https://www.googleapis.com/auth/userinfo.profile'],
-        });
-        const authWindow = new BrowserWindow({ x: 60, y: 60, useContentSize: true });
-        authWindow.loadURL(url);
+    ipcMain.on('auth-start', async (event, provider) => {
+        if (provider === 'google') {
+            startGoogleAuth(mainWindow);
+        } else if (provider === 'microsoft') {
+            startMicrosoftAuth(mainWindow);
+        }
+    });
+
+    ipcMain.on('logout', async () => {
+        await keytar.deletePassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME);
+        await keytar.deletePassword(SERVICE_NAME, GOOGLE_UNIQUE_ID_KEY);
+        await keytar.deletePassword(SERVICE_NAME, MS_ACCOUNT_NAME);
+        await keytar.deletePassword(SERVICE_NAME, MS_UNIQUE_ID_KEY);
+        mainWindow.webContents.send('logout-success');
+        console.log('Stored tokens cleared');
+    });
+});
+
+const startGoogleAuth = async (mainWindow) => {
+    const client = initGoogleOAuthClient();
+    const url = client.generateAuthUrl({
+        scope: ['https://www.googleapis.com/auth/userinfo.profile'],
+    });
+    const authWindow = new BrowserWindow({ x: 60, y: 60, useContentSize: true });
+    authWindow.loadURL(url);
+
+    authWindow.on('closed', () => {
+        mainWindow.webContents.send('auth-window-closed');
+    });
+
+    const code = await getOAuthCodeByInteraction(authWindow, url);
+    const response = await client.getToken(code);
+    const uniqueId = crypto.randomUUID();
+    await keytar.setPassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME, JSON.stringify(response.tokens));
+    await keytar.setPassword(SERVICE_NAME, GOOGLE_UNIQUE_ID_KEY, uniqueId);
+    mainWindow.webContents.send('auth-success', { tokens: response.tokens, uniqueId });
+
+    const isValid = await validateGoogleToken(response.tokens);
+    mainWindow.webContents.send('token-validity', isValid);
+};
+
+const startMicrosoftAuth = async (mainWindow) => {
+    const msalConfig = {
+        auth: {
+            clientId: MICROSOFT_OAUTH_CLIENT.clientId,
+            authority: `https://login.microsoftonline.com/${MICROSOFT_OAUTH_CLIENT.tenantId}`,
+            redirectUri: 'msal://auth',
+        },
+    };
+
+    const pca = new msal.PublicClientApplication(msalConfig);
+
+    const authCodeUrlParameters = {
+        scopes: ["user.read", "offline_access"],
+        redirectUri: 'msal://auth',
+        prompt: "select_account"
+    };
+
+    try {
+        const authUrl = await pca.getAuthCodeUrl(authCodeUrlParameters);
+        authWindow = new BrowserWindow({ x: 60, y: 60, useContentSize: true });
+        authWindow.loadURL(authUrl);
 
         authWindow.on('closed', () => {
             mainWindow.webContents.send('auth-window-closed');
         });
+    } catch (error) {
+        console.error('Error getting auth URL:', error);
+    }
+};
 
-        const code = await getOAuthCodeByInteraction(authWindow, url);
-        const response = await client.getToken(code);
+const handleMicrosoftAuthCode = async (code) => {
+    const msalConfig = {
+        auth: {
+            clientId: MICROSOFT_OAUTH_CLIENT.clientId,
+            authority: `https://login.microsoftonline.com/${MICROSOFT_OAUTH_CLIENT.tenantId}`,
+            redirectUri: 'msal://auth',
+        },
+    };
+
+    const pca = new msal.PublicClientApplication(msalConfig);
+    const tokenRequest = {
+        code: code,
+        scopes: ["user.read", "offline_access"],
+        redirectUri: 'msal://auth',
+    };
+
+    try {
+        const response = await pca.acquireTokenByCode(tokenRequest);
         const uniqueId = crypto.randomUUID();
-        await keytar.setPassword(SERVICE_NAME, ACCOUNT_NAME, JSON.stringify(response.tokens));
-        await keytar.setPassword(SERVICE_NAME, UNIQUE_ID_KEY, uniqueId);
-        mainWindow.webContents.send('auth-success', { tokens: response.tokens, uniqueId });
+        const account = response.account;
 
-        // Perform a simple API request to confirm token validity
-        const isValid = await validateToken(response.tokens);
+        await keytar.setPassword(SERVICE_NAME, MS_ACCOUNT_NAME, JSON.stringify({ tokens: response, account: account }));
+        await keytar.setPassword(SERVICE_NAME, MS_UNIQUE_ID_KEY, uniqueId);
+        mainWindow.webContents.send('auth-success', { tokens: response, uniqueId });
+
+        if (authWindow) {
+            authWindow.close();
+            authWindow = null;
+        }
+
+        const isValid = await validateMsToken(response.accessToken);
         mainWindow.webContents.send('token-validity', isValid);
-    });
+    } catch (error) {
+        console.error('Error during token acquisition:', error);
+        mainWindow.webContents.send('token-validity', false);
+    }
+};
 
-    ipcMain.on('logout', async () => {
-        await keytar.deletePassword(SERVICE_NAME, ACCOUNT_NAME);
-        await keytar.deletePassword(SERVICE_NAME, UNIQUE_ID_KEY);
-        mainWindow.webContents.send('logout-success');
-    });
-});
-
-const initOAuthClient = () => {
+const initGoogleOAuthClient = () => {
     return new OAuth2Client({
-        clientId: OAUTH_CLIENT.client_id,
-        clientSecret: OAUTH_CLIENT.client_secret,
+        clientId: GOOGLE_OAUTH_CLIENT.clientId,
+        clientSecret: GOOGLE_OAUTH_CLIENT.clientSecret,
         redirectUri: 'urn:ietf:wg:oauth:2.0:oob',
     });
 };
@@ -94,6 +218,11 @@ const handleURLChange = (url, interactionWindow, resolve, reject, onclosed) => {
         interactionWindow.close();
         return resolve(parsedURL.searchParams.get('approvalCode'));
     }
+    if (parsedURL.searchParams.get('code')) {
+        interactionWindow.removeListener('closed', onclosed);
+        interactionWindow.close();
+        return resolve(parsedURL.searchParams.get('code'));
+    }
     if ((parsedURL.searchParams.get('response') || '').startsWith('error=')) {
         interactionWindow.removeListener('closed', onclosed);
         interactionWindow.close();
@@ -101,7 +230,7 @@ const handleURLChange = (url, interactionWindow, resolve, reject, onclosed) => {
     }
 };
 
-const validateToken = async (tokens) => {
+const validateGoogleToken = async (tokens) => {
     const client = new OAuth2Client();
     client.setCredentials(tokens);
     try {
@@ -112,6 +241,31 @@ const validateToken = async (tokens) => {
         return true;
     } catch (error) {
         console.error('Token validation failed:', error);
+        return false;
+    }
+};
+
+const validateMsToken = async (accessToken) => {
+    const url = "https://graph.microsoft.com/v1.0/me";
+    
+    try {   
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Token validation failed: ${errorText}`);
+            throw new Error('Token validation failed');
+        }
+
+        const userInfo = await response.json();
+        console.log('User Info:', userInfo); // Log the user info to verify
+        return true;
+    } catch (error) {
+        console.error('Token validation error:', error);
         return false;
     }
 };

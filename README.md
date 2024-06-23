@@ -16,6 +16,7 @@ The primary purpose of this application is to serve as a reference implementatio
 - Node.js (v12 or higher)
 - npm (v6 or higher)
 - Google OAuth credentials
+- Microsoft OAuth credentials
 
 ### Installation
 1. Clone the repository:
@@ -34,8 +35,21 @@ The primary purpose of this application is to serve as a reference implementatio
 
 ### Google OAuth Setup
 1. Create a new project on the [Google Cloud Console](https://console.cloud.google.com/).
-2. Set up OAuth 2.0 credentials and obtain the client ID.
+2. Set up OAuth 2.0 credentials and obtain the client ID and client secret.
 3. Add the client ID and client secret to `secrets.example.js` file and then rename it to `secrets.js`
+
+### Microsoft OAuth Setup
+1. Create a new project on [Azure Portal](aka.ms/portal).
+2. Go through the steps to create an App Registration for a Desktop app.
+3. Mention `myapp://auth` in the redirect URI.
+4. Once the App Registration is created, you have to edit the Manifest. Microsoft doesn't have a way to allow Implicit grants through the UI, so we need to use the Manifest. Look for `auth2AllowIdTokenImplicitFlow` and `oauth2AllowImplicitFlow` and make those values `true`. Now when you go to Authentication you can see that "Access tokens" and "ID tokens" are checked.
+4. You have to go to API permissions and assign the following permissions through Microsoft Graph delegated permissions:
+    - email
+    - offline_access
+    - openid
+    - profile
+    - User.Read
+5. Add the client ID, tenant ID, and the redirect URI to `secrets.example.js` file and then rename it to `secrets.js`
 
 
 ## Contributions
