@@ -16,6 +16,7 @@ const MS_UNIQUE_ID_KEY = 'ms-unique-id';
 
 let mainWindow;
 let authWindow;
+let splashWindow;
 
 require('electron-reload')(__dirname, {
     electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
@@ -37,6 +38,26 @@ app.on('ready', async () => {
         }
     });
 
+    splashWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        frame: false,
+        alwaysOnTop: true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+        },
+    });
+
+    splashWindow.loadFile('splash.html');
+
+    setTimeout(async () => {
+        await createMainWindow();
+        splashWindow.close();
+    }, 3000); // Show splash screen for 3 seconds
+});
+
+async function createMainWindow() {
     mainWindow = new BrowserWindow({
         title: 'Electron OAuth Example',
         webPreferences: { 
@@ -45,7 +66,9 @@ app.on('ready', async () => {
         },
     });
 
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.once('did-finish-load', () => {
+        mainWindow.webContents.openDevTools(); // Open DevTools when content is loaded
+    });
 
     try {
         const googleTokens = await keytar.getPassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME);
@@ -96,7 +119,7 @@ app.on('ready', async () => {
         mainWindow.webContents.send('logout-success');
         console.log('Stored tokens cleared');
     });
-});
+}
 
 const startGoogleAuth = async (mainWindow) => {
     const client = initGoogleOAuthClient();

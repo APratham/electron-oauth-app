@@ -1,0 +1,62 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /*background-color: #4f244c;  Solid color background */
+    background: linear-gradient(135deg, #4f244c 0%, #702d55 100%);
+    color: #ecf0f1;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    position: relative;
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+.welcome-text {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 1.2em;
+}
+
+.author-name {
+    position: absolute;
+    top: 40px;
+    left: 20px;
+    font-size: 0.9em;
+}
+
+.version {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    font-size: 0.6em;
+}
+
+.progress-bar-container {
+    width: 80%;
+    margin: 250px auto 0 auto; 
+    background-color: #ddd;
+    border-radius: 10px;
+    height: 10px;
+}
+
+.progress-bar {
+    width: 0;
+    height: 100%;
+    background-color: #912f65; 
+    border-radius: 10px;
+    animation: load 3s linear infinite;
+}
+
+@keyframes load {
+    0% { width: 0; }
+    100% { width: 100%; }
+}

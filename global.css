@@ -1,29 +1,57 @@
-body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    padding: 50px;
-  }
-  
-  h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-  }
-  
-  ion-button {
-    --padding-top: 10px;
-    --padding-bottom: 10px;
-    --padding-start: 20px;
-    --padding-end: 20px;
-    font-size: 16px;
-    margin: 10px;
-  }
-  
-  #status, #token-status {
-    margin-top: 20px;
-  }
+html, body, ion-app, ion-content {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
 
-  .button-text {
-    padding: 10px 15px;
-    font-weight: 500;
-  }
-  
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+ion-content {
+  --background: url('./assets/3452445.webp') no-repeat center center fixed;
+  --background-size: cover;
+}
+
+h1 {
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+ion-button {
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --padding-start: 20px;
+  --padding-end: 20px;
+  font-size: 16px;
+  margin: 10px;
+}
+
+#status, #token-status {
+  margin-top: 20px;
+}
+
+.button-text {
+  padding: 10px 15px;
+  font-weight: 500;
+}
+
+.image-credits {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 0.8em;
+  color: #ffffff; 
+  background-color: rgba(0, 0, 0, 0.5); 
+  padding: 5px;
+  border-radius: 5px;
+  z-index: 1000;
+}
+
+.image-credits a {
+  color: #ffffff;
+  text-decoration: underline;
+}
