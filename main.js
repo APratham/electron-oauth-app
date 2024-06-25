@@ -18,12 +18,14 @@ let mainWindow;
 let authWindow;
 let splashWindow;
 
-require('electron-reload')(__dirname, {
+if (process.env.NODE_ENV === 'development') {
+  require('electron-reload')(__dirname, {
     electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
     hardResetMethod: 'exit',
     watchRenderer: true,
     ignored: /node_modules|[/\\]\./
   });
+}
 
 app.on('ready', async () => {
     protocol.registerHttpProtocol('msal', (request, callback) => {
@@ -67,42 +69,47 @@ async function createMainWindow() {
     });
 
     mainWindow.webContents.once('did-finish-load', () => {
-        mainWindow.webContents.openDevTools(); // Open DevTools when content is loaded
+        if (process.env.NODE_ENV === 'development') {
+            mainWindow.webContents.openDevTools(); // Open DevTools in development mode
+        }
     });
 
     try {
-        const googleTokens = await keytar.getPassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME);
-        const googleUniqueId = await keytar.getPassword(SERVICE_NAME, GOOGLE_UNIQUE_ID_KEY);
-        const msTokens = await keytar.getPassword(SERVICE_NAME, MS_ACCOUNT_NAME);
-        const msUniqueId = await keytar.getPassword(SERVICE_NAME, MS_UNIQUE_ID_KEY);
-
-        if (googleTokens || msTokens) {
-            mainWindow.loadURL(`file://${__dirname}/index.html`);
-            mainWindow.webContents.once('did-finish-load', () => {
-                if (googleTokens) {
-                    const tokens = JSON.parse(googleTokens);
-                    mainWindow.webContents.send('auth-success', { tokens, uniqueId: googleUniqueId });
-                    validateGoogleToken(tokens).then(isValid => {
-                        mainWindow.webContents.send('token-validity', isValid);
-                    });
-                } else if (msTokens) {
-                    const { tokens, account } = JSON.parse(msTokens);
-                    mainWindow.webContents.send('auth-success', { tokens, uniqueId: msUniqueId });
-                    validateMsToken(tokens.accessToken).then(isValid => {
-                        mainWindow.webContents.send('token-validity', isValid);
-                    }).catch(error => {
-                        console.error('Token validation error:', error);
-                    });
-                }
+      console.log('Retrieving tokens from keychain...');
+      const [googleTokens, googleUniqueId, msTokens, msUniqueId] = await Promise.all([
+        keytar.getPassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME),
+        keytar.getPassword(SERVICE_NAME, GOOGLE_UNIQUE_ID_KEY),
+        keytar.getPassword(SERVICE_NAME, MS_ACCOUNT_NAME),
+        keytar.getPassword(SERVICE_NAME, MS_UNIQUE_ID_KEY),
+      ]);
+  
+      if (googleTokens || msTokens) {
+        mainWindow.loadFile(path.join(__dirname, 'index.html'));
+        mainWindow.webContents.once('did-finish-load', () => {
+          if (googleTokens) {
+            const tokens = JSON.parse(googleTokens);
+            mainWindow.webContents.send('auth-success', { tokens, uniqueId: googleUniqueId });
+            validateGoogleToken(tokens).then(isValid => {
+              mainWindow.webContents.send('token-validity', isValid);
             });
-        } else {
-            mainWindow.loadURL(`file://${__dirname}/login.html`);
-        }
+          } else if (msTokens) {
+            const { tokens, account } = JSON.parse(msTokens);
+            mainWindow.webContents.send('auth-success', { tokens, uniqueId: msUniqueId });
+            validateMsToken(tokens.accessToken).then(isValid => {
+              mainWindow.webContents.send('token-validity', isValid);
+            }).catch(error => {
+              console.error('Token validation error:', error);
+            });
+          }
+        });
+      } else {
+        mainWindow.loadFile(path.join(__dirname, 'login.html'));
+      }
     } catch (error) {
         console.error('Error retrieving tokens:', error);
-        mainWindow.loadURL(`file://${__dirname}/login.html`);
+        mainWindow.loadFile(path.join(__dirname, 'login.html'));
     }
-
+  
     ipcMain.on('auth-start', async (event, provider) => {
         if (provider === 'google') {
             startGoogleAuth(mainWindow);
@@ -112,12 +119,14 @@ async function createMainWindow() {
     });
 
     ipcMain.on('logout', async () => {
-        await keytar.deletePassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME);
-        await keytar.deletePassword(SERVICE_NAME, GOOGLE_UNIQUE_ID_KEY);
-        await keytar.deletePassword(SERVICE_NAME, MS_ACCOUNT_NAME);
-        await keytar.deletePassword(SERVICE_NAME, MS_UNIQUE_ID_KEY);
-        mainWindow.webContents.send('logout-success');
-        console.log('Stored tokens cleared');
+      await Promise.all([
+        keytar.deletePassword(SERVICE_NAME, GOOGLE_ACCOUNT_NAME),
+        keytar.deletePassword(SERVICE_NAME, GOOGLE_UNIQUE_ID_KEY),
+        keytar.deletePassword(SERVICE_NAME, MS_ACCOUNT_NAME),
+        keytar.deletePassword(SERVICE_NAME, MS_UNIQUE_ID_KEY),
+      ]);
+      mainWindow.webContents.send('logout-success');
+      console.log('Stored tokens cleared');
     });
 }
 
@@ -145,71 +154,71 @@ const startGoogleAuth = async (mainWindow) => {
 };
 
 const startMicrosoftAuth = async (mainWindow) => {
-    const msalConfig = {
-        auth: {
-            clientId: MICROSOFT_OAUTH_CLIENT.clientId,
-            authority: `https://login.microsoftonline.com/${MICROSOFT_OAUTH_CLIENT.tenantId}`,
-            redirectUri: 'msal://auth',
-        },
-    };
+  const msalConfig = {
+    auth: {
+      clientId: MICROSOFT_OAUTH_CLIENT.clientId,
+      authority: `https://login.microsoftonline.com/${MICROSOFT_OAUTH_CLIENT.tenantId}`,
+      redirectUri: 'msal://auth',
+    },
+  };
 
-    const pca = new msal.PublicClientApplication(msalConfig);
+  const pca = new msal.PublicClientApplication(msalConfig);
 
-    const authCodeUrlParameters = {
-        scopes: ["user.read", "offline_access"],
-        redirectUri: 'msal://auth',
-        prompt: "select_account"
-    };
+  const authCodeUrlParameters = {
+    scopes: ["user.read", "offline_access"],
+    redirectUri: 'msal://auth',
+    prompt: "select_account"
+  };
 
-    try {
-        const authUrl = await pca.getAuthCodeUrl(authCodeUrlParameters);
-        authWindow = new BrowserWindow({ x: 60, y: 60, useContentSize: true });
-        authWindow.loadURL(authUrl);
+  try {
+    const authUrl = await pca.getAuthCodeUrl(authCodeUrlParameters);
+    authWindow = new BrowserWindow({ x: 60, y: 60, useContentSize: true });
+    authWindow.loadURL(authUrl);
 
-        authWindow.on('closed', () => {
-            mainWindow.webContents.send('auth-window-closed');
-        });
-    } catch (error) {
-        console.error('Error getting auth URL:', error);
-    }
+    authWindow.on('closed', () => {
+      mainWindow.webContents.send('auth-window-closed');
+    });
+  } catch (error) {
+    console.error('Error getting auth URL:', error);
+  }
 };
 
 const handleMicrosoftAuthCode = async (code) => {
     const msalConfig = {
         auth: {
-            clientId: MICROSOFT_OAUTH_CLIENT.clientId,
-            authority: `https://login.microsoftonline.com/${MICROSOFT_OAUTH_CLIENT.tenantId}`,
-            redirectUri: 'msal://auth',
+        clientId: MICROSOFT_OAUTH_CLIENT.clientId,
+        authority: `https://login.microsoftonline.com/${MICROSOFT_OAUTH_CLIENT.tenantId}`,
+        redirectUri: 'msal://auth',
         },
     };
 
-    const pca = new msal.PublicClientApplication(msalConfig);
-    const tokenRequest = {
-        code: code,
-        scopes: ["user.read", "offline_access"],
-        redirectUri: 'msal://auth',
-    };
+  const pca = new msal.PublicClientApplication(msalConfig);
+  const tokenRequest = {
+    code: code,
+    scopes: ["user.read", "offline_access"],
+    redirectUri: 'msal://auth',
+  };
 
-    try {
-        const response = await pca.acquireTokenByCode(tokenRequest);
-        const uniqueId = crypto.randomUUID();
-        const account = response.account;
+  try {
+    const response = await pca.acquireTokenByCode(tokenRequest);
+    const uniqueId = crypto.randomUUID();
+    const account = response.account;
 
-        await keytar.setPassword(SERVICE_NAME, MS_ACCOUNT_NAME, JSON.stringify({ tokens: response, account: account }));
-        await keytar.setPassword(SERVICE_NAME, MS_UNIQUE_ID_KEY, uniqueId);
-        mainWindow.webContents.send('auth-success', { tokens: response, uniqueId });
+    await keytar.setPassword(SERVICE_NAME, MS_ACCOUNT_NAME, JSON.stringify({ tokens: response, account: account }));
+    await keytar.setPassword(SERVICE_NAME, MS_UNIQUE_ID_KEY, uniqueId);
+    mainWindow.webContents.send('auth-success', { tokens: response, uniqueId });
 
-        if (authWindow) {
-            authWindow.close();
-            authWindow = null;
-        }
-
-        const isValid = await validateMsToken(response.accessToken);
-        mainWindow.webContents.send('token-validity', isValid);
-    } catch (error) {
-        console.error('Error during token acquisition:', error);
-        mainWindow.webContents.send('token-validity', false);
+    if (authWindow) {
+      authWindow.close();
+      authWindow = null;
     }
+
+    const isValid = await validateMsToken(response.accessToken);
+    mainWindow.webContents.send('token-validity', isValid);
+  } catch (error) {
+    console.error('Error during token acquisition:', error);
+    mainWindow.webContents.send('token-validity', false);
+  }
 };
 
 const initGoogleOAuthClient = () => {
@@ -221,20 +230,20 @@ const initGoogleOAuthClient = () => {
 };
 
 const getOAuthCodeByInteraction = (interactionWindow, authPageURL) => {
-    return new Promise((resolve, reject) => {
-        interactionWindow.loadURL(authPageURL);
-        const onclosed = () => {
-            reject('Interaction ended intentionally ;(');
-        };
-        interactionWindow.on('closed', onclosed);
-        interactionWindow.webContents.on('did-navigate', (event, url) => {
-            handleURLChange(url, interactionWindow, resolve, reject, onclosed);
-        });
-        interactionWindow.webContents.on('page-title-updated', (event) => {
-            const url = interactionWindow.webContents.getURL();
-            handleURLChange(url, interactionWindow, resolve, reject, onclosed);
-        });
+  return new Promise((resolve, reject) => {
+    interactionWindow.loadURL(authPageURL);
+    const onclosed = () => {
+      reject('Interaction ended intentionally ;(');
+    };
+    interactionWindow.on('closed', onclosed);
+    interactionWindow.webContents.on('did-navigate', (event, url) => {
+      handleURLChange(url, interactionWindow, resolve, reject, onclosed);
     });
+    interactionWindow.webContents.on('page-title-updated', (event) => {
+      const url = interactionWindow.webContents.getURL();
+      handleURLChange(url, interactionWindow, resolve, reject, onclosed);
+    });
+  });
 };
 
 const handleURLChange = (url, interactionWindow, resolve, reject, onclosed) => {
@@ -272,28 +281,28 @@ const validateGoogleToken = async (tokens) => {
 };
 
 const validateMsToken = async (accessToken) => {
-    const url = "https://graph.microsoft.com/v1.0/me";
-    
-    try {   
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
+  const url = "https://graph.microsoft.com/v1.0/me";
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Token validation failed: ${errorText}`);
-            throw new Error('Token validation failed');
-        }
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
 
-        const userInfo = await response.json();
-        console.log('User Info:', userInfo); // Log the user info to verify
-        return true;
-    } catch (error) {
-        console.error('Token validation error:', error);
-        return false;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Token validation failed: ${errorText}`);
+      throw new Error('Token validation failed');
     }
+
+    const userInfo = await response.json();
+    console.log('User Info:', userInfo); // Log the user info to verify
+    return true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
 };
 
 app.on('window-all-closed', () => {
