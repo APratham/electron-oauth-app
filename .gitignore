@@ -29,11 +29,6 @@ package-lock.json
 jspm_packages/
 bower_components/
 
-# Temporary files
-.DS_Store
-*.tmp
-*.temp
-
 # Angular specific
 .angular/cache/
 .angular-build/

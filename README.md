@@ -1,4 +1,21 @@
-# Electron OAuth App
+<h1 align="center">
+  <img src="https://apratham.github.io/assets/aiops.jpg" alt="Logo" width="40">
+  Electron OAuth App
+</h1>
+
+<p align="center">
+  <img src="https://apratham.github.io/assets/screenshot.png" alt="App Screenshot" width="600">
+</p>
+
+
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Mac%20%7C%20Linux-yellow)
+![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/APratham/electron-oauth-app)
+![Node.js LTS version](https://img.shields.io/badge/node-LTS-red.svg)
+![Electron version](https://img.shields.io/badge/electron-^30.1.1-blue.svg)
+![]()
+![Electron Builder version](https://img.shields.io/badge/electron--builder-^24.13.3-blue.svg)
+![GitHub License](https://img.shields.io/github/license/APratham/electron-oauth-app)
+
 
 
 ## Overview
