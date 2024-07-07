@@ -1,10 +1,10 @@
 <h1 align="center">
-  <img src="https://apratham.github.io/assets/aiops.jpg" alt="Logo" width="40">
+  <img src="assets/aiops.jpg" alt="Logo" width="40">
   Electron OAuth App
 </h1>
 
 <p align="center">
-  <img src="https://apratham.github.io/assets/screenshot.png" alt="App Screenshot" width="600">
+  <img src="assets/screenshot.png" alt="App Screenshot" width="600">
 </p>
 
 
@@ -20,7 +20,7 @@
 
 ## Overview
 
-Electron OAuth App is a cross-platform desktop application that demonstrates how to implement OAuth authentication using Google Sign-In. The app is built with Electron, Ionic, and Angular, providing a seamless login/logout flow with OAuth 2.0. This is built as part of the project "AIOps and Predictive Analytics for Container Logs Monitoring". Project files can be found [here](https://github.com/APratham/AIOps-containers) once they're made open source. Check the [project website](https://apratham.github.io/AIOps-containers) for more information.
+Electron OAuth App is a cross-platform desktop application that demonstrates how to implement OAuth authentication using Google Sign-In. The app is built with Electron providing a seamless login/logout flow with OAuth 2.0. This is built as part of the project "AIOps and Predictive Analytics for Container Logs Monitoring". Project files can be found [here](https://github.com/APratham/AIOps-containers) once they're made open source. Check the [project website](https://apratham.github.io/AIOps-containers) for more information.
 
 ## Status
 This application and the project it's a part of are currently in active development stage. Basic OAuth login and logout functionalities are implemented in the application, and more improvements and additional features are planned.
@@ -76,7 +76,7 @@ The primary purpose of this application is to serve as a reference implementatio
 Contributions to this repository are not allowed as it is part of a project that is in active development.
 
 ## Contact
-For questions or issues related to this branch, please contact the [Project Team](https://github.com/APratham/AIOps-containers/tree/main?tab=readme-ov-file#project-team).
+For questions or issues related to this branch, please contact the [Project Team](https://github.com/APratham/electron-oauth-app/wiki#project-team).
 
 ## License
 This application and the project are licensed under the [GNU Affero General Public License v3](https://opensource.org/license/agpl-v3). See the [LICENSE](LICENSE) file for more details.

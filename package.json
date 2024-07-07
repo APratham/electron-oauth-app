@@ -1,0 +1,129 @@
+{
+  "name": "electron-oauth-app",
+  "version": "1.0.0",
+  "description": "Electron Desktop App with Google OAuth",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development nodemon --watch . --exec \"electron .\"",
+    "clean-cache": "npm cache clean --force",
+    "clean-files": "rimraf dist node_modules package-lock.json",
+    "clean": "npm run clean-cache && npm run clean-files",
+    "trace-warnings": "electron . --enable-logging",
+    "dist": "npm run clean && npm install && cross-env NODE_ENV=production electron-builder --mac --win --linux",
+    "dist:mac": "npm run clean && npm install && cross-env NODE_ENV=production electron-builder --mac",
+    "dist:win": "npm run clean && npm install && cross-env NODE_ENV=production electron-builder --win",
+    "dist:win:amd64": "npm run clean && npm install && cross-env NODE_ENV=production electron-builder --win --x64",
+    "dist:win:arm64": "npm run clean && npm install && cross-env NODE_ENV=production electron-builder --win --arm64",
+    "dist:linux": "npm run clean && npm install && cross-env NODE_ENV=production electron-builder --linux",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild-all": "electron-rebuild -f",
+    "rebuild-google": "electron-rebuild -f -w google-auth-library"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/APratham/electron-oauth-app.git"
+  },
+  "keywords": [
+    "Electron",
+    "OAuth",
+    "Google",
+    "Desktop"
+  ],
+  "author": {
+    "name": "APratham",
+    "email": "a.pratham1998@gmail.com",
+    "url": "https://apratham.github.io/"
+  },
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/APratham/electron-oauth-app/issues"
+  },
+  "homepage": "https://github.com/APratham/electron-oauth-app?tab=readme-ov-file",
+  "dependencies": {
+    "@azure/msal-angular": "^3.0.20",
+    "@azure/msal-browser": "^3.17.0",
+    "@azure/msal-node": "^2.9.2",
+    "electron-reload": "^2.0.0-alpha.1",
+    "electron-store": "^10.0.0",
+    "google-auth-library": "^9.11.0",
+    "keytar": "^7.9.0",
+    "nodemon": "^3.1.4",
+    "semver": "^7.6.2"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^31.0.2",
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9"
+  },
+  "build": {
+    "appId": "com.apratham.electronoauthapp",
+    "productName": "Electron OAuth App",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!dist_electron/**/*",
+      "!*.log",
+      "!*.md",
+      "!*.plist",
+      "!.gitignore",
+      "!package-lock.json"
+    ],
+    "extraResources": {
+      "from": "./node_modules/",
+      "to": "node_modules",
+      "filter": [
+        "**/*"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "Utility",
+      "maintainer": "APratham <a.pratham1998@gmail.com>"
+    }
+  }
+}
