@@ -12,8 +12,8 @@
 ![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/APratham/electron-oauth-app)
 ![Node.js LTS version](https://img.shields.io/badge/node-LTS-red.svg)
 ![Electron version](https://img.shields.io/badge/electron-^30.1.1-blue.svg)
-![]()
 ![Electron Builder version](https://img.shields.io/badge/electron--builder-^24.13.3-blue.svg)
+[![Release](https://github.com/APratham/electron-oauth-app-prod/actions/workflows/release.yml/badge.svg)](https://github.com/APratham/electron-oauth-app-prod/actions/workflows/release.yml)
 ![GitHub License](https://img.shields.io/github/license/APratham/electron-oauth-app)
 
 
